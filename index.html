@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<title>Run90</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--surface:#141414;--border:#2a2a2a;
+  --accent:#FF4D00;--accent2:#ff6a00;
+  --success:#00E676;--info:#448AFF;--warning:#FFD600;--danger:#FF1744;
+  --text:#f0f0f0;--text-dim:#888;--text-muted:#555;
+  --radius:16px;--radius-sm:12px;--radius-pill:20px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-left:env(safe-area-inset-left,0px);
+  --safe-right:env(safe-area-inset-right,0px);
+  --font-display:'Bebas Neue',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --font-body:'DM Sans',sans-serif;
+}
+html,body{
+  height:100%;width:100%;overflow:hidden;
+  background:var(--bg);color:var(--text);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:pan-y;
+}
+input,textarea,select,button{font-family:inherit;font-size:inherit;color:inherit;border:none;outline:none;background:none}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+
+/* Install Banner */
+.install-banner{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;font-size:13px;font-weight:600;
+  padding:calc(var(--safe-top) + 8px) 16px 8px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  transform:translateY(-100%);transition:transform .3s ease;
+}
+.install-banner.show{transform:translateY(0)}
+.install-banner button{color:#fff;font-size:20px;line-height:1;padding:4px;opacity:.8}
+
+/* App Shell */
+.app{
+  height:100%;display:flex;flex-direction:column;
+  padding-top:var(--safe-top);
+}
+.screens{flex:1;overflow:hidden;position:relative}
+.screen{
+  position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;
+  padding:0 16px 120px;opacity:0;pointer-events:none;
+  transition:opacity .25s ease;
+  -webkit-overflow-scrolling:touch;
+}
+.screen.active{opacity:1;pointer-events:auto}
+
+/* Onboarding */
+.onboard-wrap{
+  position:fixed;inset:0;z-index:900;background:var(--bg);
+  display:flex;flex-direction:column;
+  padding:var(--safe-top) 24px calc(var(--safe-bottom) + 24px);
+  transition:opacity .3s ease;
+}
+.onboard-wrap.hidden{opacity:0;pointer-events:none}
+.onboard-step{display:none;flex-direction:column;flex:1;justify-content:center;align-items:center;text-align:center;gap:24px}
+.onboard-step.active{display:flex}
+.onboard-logo{font-family:var(--font-display);font-size:72px;letter-spacing:4px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.onboard-tagline{font-size:20px;color:var(--text-dim);font-weight:500}
+.onboard-form{width:100%;max-width:360px;display:flex;flex-direction:column;gap:16px;text-align:left}
+.field-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:4px}
+.field-input{
+  width:100%;padding:14px 16px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);font-size:16px;color:var(--text);
+  font-family:var(--font-mono);
+}
+.field-input:focus{border-color:var(--accent)}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:16px 32px;border-radius:var(--radius-sm);font-weight:700;
+  font-size:16px;transition:all .15s ease;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;width:100%;
+}
+.btn-primary:active{transform:scale(.97);opacity:.9}
+.btn-secondary{background:var(--surface);border:1px solid var(--border);color:var(--text)}
+.btn-danger{background:rgba(255,23,68,.15);color:var(--danger);border:1px solid rgba(255,23,68,.3)}
+.btn-muted{background:var(--surface);border:1px solid var(--border);color:var(--text-dim);width:100%;padding:16px 32px;font-weight:600}
+.btn-sm{padding:10px 20px;font-size:14px}
+
+/* Bottom Nav */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:rgba(14,14,14,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  display:flex;
+  padding:8px 0 calc(var(--safe-bottom) + 8px);
+}
+.nav-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 0;color:var(--text-muted);font-size:10px;font-weight:600;
+  transition:color .15s ease;
+}
+.nav-tab.active{color:var(--accent)}
+.nav-tab svg{width:24px;height:24px;fill:currentColor}
+
+/* Dashboard Header */
+.dash-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 0 8px;
+}
+.dash-logo{font-family:var(--font-display);font-size:28px;letter-spacing:2px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.dash-phase{font-size:11px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.streak-badge{
+  display:flex;align-items:center;gap:6px;
+  background:var(--surface);border:1px solid var(--border);
+  padding:6px 12px;border-radius:var(--radius-pill);
+  font-family:var(--font-mono);font-size:14px;font-weight:600;
+}
+.streak-badge svg{width:16px;height:16px;fill:var(--accent)}
+
+/* Progress Ring */
+.ring-section{display:flex;flex-direction:column;align-items:center;padding:16px 0}
+.ring-wrap{position:relative;width:200px;height:200px}
+.ring-center{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.ring-day{font-family:var(--font-display);font-size:48px;line-height:1}
+.ring-of{font-size:14px;color:var(--text-dim)}
+.ring-sub{font-size:13px;color:var(--text-dim);margin-top:8px;font-weight:500}
+
+/* Stat Cards */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:8px 0}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 12px;text-align:center;
+}
+.stat-val{font-family:var(--font-mono);font-size:22px;font-weight:600}
+.stat-label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+
+/* Water Tracker */
+.water-section{padding:16px 0}
+.section-title{font-family:var(--font-display);font-size:22px;letter-spacing:1px;margin-bottom:12px}
+.water-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.water-glass{
+  width:32px;height:40px;border-radius:4px 4px 6px 6px;
+  border:2px solid var(--border);cursor:pointer;
+  transition:all .15s ease;position:relative;overflow:hidden;
+}
+.water-glass.filled{border-color:var(--info);background:rgba(68,138,255,.3)}
+.water-glass.filled::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:70%;
+  background:var(--info);border-radius:0 0 3px 3px;
+}
+.water-count{font-family:var(--font-mono);font-size:14px;color:var(--text-dim);margin-left:8px}
+
+/* Log Button */
+.log-btn-wrap{padding:8px 0}
+
+/* Week Plan */
+.week-section{padding:16px 0}
+.week-row{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 12px;border-radius:var(--radius-sm);
+  margin-bottom:4px;font-size:14px;
+}
+.week-row.today{background:var(--surface);border:1px solid var(--border)}
+.week-day{width:36px;font-weight:700;color:var(--text-dim);font-size:12px;text-transform:uppercase;flex-shrink:0}
+.week-activity{flex:1;font-weight:500}
+.week-check{width:20px;text-align:center;font-size:14px;color:var(--success)}
+
+/* Calendar Grid */
+.cal-section{padding:16px 0}
+.cal-grid{
+  display:grid;grid-template-columns:repeat(10,1fr);gap:4px;
+}
+.cal-day{
+  aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:11px;font-weight:600;
+  cursor:pointer;transition:all .15s ease;
+  position:relative;
+}
+.cal-day.future{background:#1a1a1a;color:var(--text-muted)}
+.cal-day.completed{background:rgba(0,230,118,.2);color:var(--success)}
+.cal-day.rest{background:rgba(68,138,255,.2);color:var(--info)}
+.cal-day.missed{background:rgba(255,23,68,.15);color:var(--danger)}
+.cal-day.today{box-shadow:0 0 0 2px var(--accent);z-index:1}
+.cal-day:active{transform:scale(.9)}
+
+/* Modal */
+.modal-overlay{
+  position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.6);
+  opacity:0;pointer-events:none;transition:opacity .25s ease;
+}
+.modal-overlay.show{opacity:1;pointer-events:auto}
+.modal-sheet{
+  position:fixed;bottom:0;left:0;right:0;z-index:501;
+  background:var(--surface);border-radius:20px 20px 0 0;
+  padding:20px 20px calc(var(--safe-bottom) + 20px);
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+  max-height:85vh;overflow-y:auto;
+}
+.modal-overlay.show+.modal-sheet,.modal-sheet.show{transform:translateY(0)}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-family:var(--font-display);font-size:24px;letter-spacing:1px;margin-bottom:16px}
+
+/* Toggle Group */
+.toggle-group{display:flex;gap:8px;margin-bottom:16px}
+.toggle-btn{
+  flex:1;padding:10px 8px;border-radius:var(--radius-sm);
+  background:var(--bg);border:1px solid var(--border);
+  font-size:13px;font-weight:600;text-align:center;
+  transition:all .15s ease;
+}
+.toggle-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+.feel-group{display:flex;gap:8px;margin-bottom:16px}
+.feel-btn{
+  flex:1;padding:10px 8px;border-radius:var(--radius-sm);
+  background:var(--bg);border:1px solid var(--border);
+  font-size:13px;font-weight:600;text-align:center;
+  transition:all .15s ease;
+}
+.feel-btn.active-hard{background:rgba(255,23,68,.2);color:var(--danger);border-color:var(--danger)}
+.feel-btn.active-good{background:rgba(0,230,118,.2);color:var(--success);border-color:var(--success)}
+.feel-btn.active-easy{background:rgba(68,138,255,.2);color:var(--info);border-color:var(--info)}
+
+.modal-field{margin-bottom:16px}
+.modal-field textarea{
+  width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--radius-sm);font-size:14px;resize:none;height:72px;
+  color:var(--text);
+}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.modal-actions .btn{flex:1}
+
+/* History / Progress */
+.chart-tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--bg);border-radius:var(--radius-sm);padding:3px}
+.chart-tab{
+  flex:1;padding:8px;text-align:center;border-radius:10px;
+  font-size:13px;font-weight:600;color:var(--text-dim);
+  transition:all .15s ease;
+}
+.chart-tab.active{background:var(--surface);color:var(--text)}
+.chart-wrap{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 8px;margin-bottom:16px;
+}
+.chart-empty{text-align:center;padding:32px 16px;color:var(--text-dim);font-size:14px}
+canvas#progressChart{width:100%;height:200px;display:block}
+
+.history-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:8px;cursor:pointer;
+  transition:all .15s ease;
+}
+.history-card:active{transform:scale(.98)}
+.history-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.history-date{font-weight:600;font-size:14px}
+.history-badge{
+  padding:3px 10px;border-radius:var(--radius-pill);font-size:11px;font-weight:700;text-transform:uppercase;
+}
+.badge-run{background:rgba(0,230,118,.15);color:var(--success)}
+.badge-run-walk{background:rgba(255,77,0,.15);color:var(--accent)}
+.badge-rest{background:rgba(68,138,255,.15);color:var(--info)}
+.history-stats{display:flex;gap:16px;font-family:var(--font-mono);font-size:13px;color:var(--text-dim)}
+.history-notes{font-size:13px;color:var(--text-dim);margin-top:6px;font-style:italic}
+
+/* Settings */
+.settings-section{padding:16px 0}
+.setting-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0;border-bottom:1px solid var(--border);
+}
+.setting-label{font-weight:600;font-size:14px}
+.setting-desc{font-size:12px;color:var(--text-dim);margin-top:2px}
+.setting-val{font-family:var(--font-mono);font-size:14px;color:var(--text-dim)}
+/* Toggle Switch */
+.toggle-switch{
+  width:48px;height:28px;border-radius:14px;
+  background:var(--border);position:relative;cursor:pointer;
+  transition:background .2s ease;flex-shrink:0;
+}
+.toggle-switch.on{background:var(--accent)}
+.toggle-switch::after{
+  content:'';position:absolute;width:22px;height:22px;border-radius:11px;
+  background:#fff;top:3px;left:3px;transition:transform .2s ease;
+}
+.toggle-switch.on::after{transform:translateX(20px)}
+.setting-input{
+  width:80px;padding:8px;text-align:right;background:var(--bg);
+  border:1px solid var(--border);border-radius:8px;
+  font-family:var(--font-mono);font-size:14px;color:var(--text);
+}
+.settings-btn-group{display:flex;flex-direction:column;gap:10px;padding:24px 0}
+
+/* Confetti */
+.confetti-wrap{position:fixed;inset:0;z-index:9999;pointer-events:none;overflow:hidden}
+.confetti-piece{
+  position:absolute;width:10px;height:10px;top:-10px;
+  animation:confetti-fall 1.5s ease-in forwards;
+}
+@keyframes confetti-fall{
+  0%{transform:translateY(0) rotate(0deg);opacity:1}
+  100%{transform:translateY(110vh) rotate(720deg);opacity:0}
+}
+
+/* Scrollbar */
+.screen::-webkit-scrollbar{width:0;display:none}
+
+/* Animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.fade-in{animation:fadeIn .4s ease}
+</style>
+</head>
+<body>
+
+<!-- Install Banner -->
+<div class="install-banner" id="installBanner">
+  <span>Add to Home Screen for notifications &amp; offline access</span>
+  <button id="dismissBanner">&times;</button>
+</div>
+
+<!-- Onboarding -->
+<div class="onboard-wrap" id="onboarding">
+  <div class="onboard-step active" id="onboardStep1">
+    <div>
+      <div class="onboard-logo">RUN90</div>
+      <p class="onboard-tagline">90 days. One goal.</p>
+    </div>
+    <button class="btn btn-primary" id="onboardNext">Let's Go</button>
+  </div>
+  <div class="onboard-step" id="onboardStep2">
+    <div style="width:100%;max-width:360px">
+      <div class="onboard-logo" style="font-size:36px;margin-bottom:8px">SETUP</div>
+      <p class="onboard-tagline" style="font-size:15px;margin-bottom:24px">Set your baseline</p>
+      <div class="onboard-form">
+        <div>
+          <div class="field-label">Start Date</div>
+          <input type="date" class="field-input" id="obStartDate">
+        </div>
+        <div>
+          <div class="field-label">Current Distance (miles)</div>
+          <input type="number" class="field-input" id="obDistance" value="1.17" step="0.01" min="0">
+        </div>
+        <div>
+          <div class="field-label">Current Time (minutes)</div>
+          <input type="number" class="field-input" id="obTime" value="17" step="1" min="0">
+        </div>
+        <div>
+          <div class="field-label">Daily Reminder Time</div>
+          <input type="time" class="field-input" id="obReminder" value="06:30">
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="onboardStart" style="max-width:360px;width:100%">Start My 90 Days</button>
+  </div>
+</div>
+
+<!-- Main App -->
+<div class="app" id="mainApp" style="display:none">
+
+  <!-- Dashboard Screen -->
+  <div class="screens">
+    <div class="screen active" id="screenHome">
+      <div class="dash-header">
+        <div>
+          <div class="dash-logo">RUN90</div>
+          <div class="dash-phase" id="phaseLabel"></div>
+        </div>
+        <div class="streak-badge">
+          <svg viewBox="0 0 24 24"><path d="M11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 1.6-1.21 1.6-1.21s1.32 1.3 1.32 3.12c0 .17-.01.34-.03.51C15.25 16.5 16 14.65 16 12.61c0-3.07-2.14-5.74-5.04-7.61 1.1 2.73-.73 4.61-2.18 6.44C7.12 13.55 6 15.31 6 17.21A5.29 5.29 0 0 0 11.71 22c2.26 0 4.17-1.29 4.98-3.12-.84.72-1.93 1.12-3.12 1.12h.14Z"/></svg>
+          <span id="streakCount">0</span>
+        </div>
+      </div>
+
+      <!-- Progress Ring -->
+      <div class="ring-section">
+        <div class="ring-wrap">
+          <svg width="200" height="200" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="88" fill="none" stroke="#1a1a1a" stroke-width="10"/>
+            <circle cx="100" cy="100" r="88" fill="none" stroke="url(#ringGrad)" stroke-width="10"
+              stroke-linecap="round" stroke-dasharray="553" stroke-dashoffset="553"
+              transform="rotate(-90 100 100)" id="ringProgress"/>
+            <defs>
+              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#FF4D00"/>
+                <stop offset="100%" stop-color="#ff6a00"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="ring-center">
+            <div class="ring-day" id="ringDay">Day 1</div>
+            <div class="ring-of">of 90</div>
+          </div>
+        </div>
+        <div class="ring-sub" id="ringSub"></div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-val" id="statMiles">0.0</div>
+          <div class="stat-label">Total Miles</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statPace">--:--</div>
+          <div class="stat-label">Avg Pace</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statMins">0</div>
+          <div class="stat-label">Total Min</div>
+        </div>
+      </div>
+
+      <!-- Water Tracker -->
+      <div class="water-section">
+        <div class="section-title">HYDRATION</div>
+        <div class="water-row" id="waterRow"></div>
+      </div>
+
+      <!-- Log Button -->
+      <div class="log-btn-wrap">
+        <button class="btn btn-primary" id="logBtn" style="font-size:17px">+ Log Today's Run</button>
+      </div>
+
+      <!-- Week Plan -->
+      <div class="week-section">
+        <div class="section-title">THIS WEEK</div>
+        <div id="weekPlan"></div>
+      </div>
+
+      <!-- Calendar Grid -->
+      <div class="cal-section">
+        <div class="section-title">90 DAY MAP</div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+    </div>
+
+    <!-- Progress Screen -->
+    <div class="screen" id="screenProgress">
+      <div style="padding-top:16px">
+        <div class="section-title" style="font-size:28px">PROGRESS</div>
+      </div>
+      <div class="chart-tabs" id="chartTabs">
+        <div class="chart-tab active" data-tab="distance">Distance</div>
+        <div class="chart-tab" data-tab="pace">Pace</div>
+        <div class="chart-tab" data-tab="duration">Duration</div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="progressChart" height="200"></canvas>
+        <div class="chart-empty" id="chartEmpty" style="display:none">Log at least 2 runs to see trends</div>
+      </div>
+      <div class="section-title">ACTIVITY LOG</div>
+      <div id="historyList"></div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div class="screen" id="screenSettings">
+      <div style="padding-top:16px">
+        <div class="section-title" style="font-size:28px">SETTINGS</div>
+      </div>
+      <div class="settings-section">
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Daily Reminder</div>
+            <div class="setting-desc">Get notified to log your run</div>
+          </div>
+          <div class="toggle-switch" id="toggleReminder"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Reminder Time</div>
+          <input type="time" class="setting-input" id="settingReminderTime" style="width:110px">
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Water Goal (glasses)</div>
+          <input type="number" class="setting-input" id="settingWaterGoal" min="1" max="20">
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Start Date</div>
+          <div class="setting-val" id="settingStart"></div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">End Date</div>
+          <div class="setting-val" id="settingEnd"></div>
+        </div>
+        <div class="settings-btn-group">
+          <button class="btn btn-secondary" id="btnExport">Export Data (JSON)</button>
+          <button class="btn btn-danger" id="btnReset">Reset All Data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="nav-tab active" data-screen="screenHome">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-tab" data-screen="screenProgress">
+      <svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg>
+      <span>Progress</span>
+    </button>
+    <button class="nav-tab" data-screen="screenSettings">
+      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+</div>
+
+<!-- Log Modal -->
+<div class="modal-overlay" id="modalOverlay"></div>
+<div class="modal-sheet" id="modalSheet">
+  <div class="modal-handle"></div>
+  <div class="modal-title" id="modalTitle">LOG ACTIVITY</div>
+  <div class="field-label">Activity Type</div>
+  <div class="toggle-group" id="typeGroup">
+    <button class="toggle-btn active" data-type="run">Run</button>
+    <button class="toggle-btn" data-type="run-walk">Run/Walk</button>
+    <button class="toggle-btn" data-type="rest">Rest Day</button>
+  </div>
+  <div id="runFields">
+    <div class="modal-field">
+      <div class="field-label">Distance (miles)</div>
+      <input type="number" class="field-input" id="logDistance" step="0.01" min="0" placeholder="0.00">
+    </div>
+    <div class="modal-field">
+      <div class="field-label">Time (minutes)</div>
+      <input type="number" class="field-input" id="logTime" step="1" min="0" placeholder="0">
+    </div>
+    <div class="field-label">How did it feel?</div>
+    <div class="feel-group" id="feelGroup">
+      <button class="feel-btn" data-feel="hard">Hard</button>
+      <button class="feel-btn" data-feel="good">Good</button>
+      <button class="feel-btn" data-feel="easy">Easy</button>
+    </div>
+  </div>
+  <div class="modal-field">
+    <div class="field-label">Notes (optional)</div>
+    <textarea class="field-input" id="logNotes" placeholder="How did it go?"></textarea>
+  </div>
+  <div class="modal-actions">
+    <button class="btn btn-secondary btn-sm" id="modalCancel">Cancel</button>
+    <button class="btn btn-primary btn-sm" id="modalSave" style="flex:2">Save</button>
+  </div>
+  <div class="modal-actions" id="deleteWrap" style="display:none;margin-top:8px">
+    <button class="btn btn-danger btn-sm" id="modalDelete" style="flex:1">Delete Entry</button>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+// ── Data ──
+const STORE_KEY='run90_data';
+const defaultData={
+  onboarded:false,startDate:'',baselineDistance:1.17,baselineTime:17,
+  reminderTime:'06:30',reminderEnabled:true,waterGoal:10,
+  logs:{},waterLogs:{}
+};
+
+function loadData(){
+  try{const d=JSON.parse(localStorage.getItem(STORE_KEY));return d||{...defaultData}}
+  catch(e){return{...defaultData}}
+}
+function saveData(d){localStorage.setItem(STORE_KEY,JSON.stringify(d))}
+
+let data=loadData();
+
+// ── Dates ──
+function today(){return formatDate(new Date())}
+function formatDate(d){
+  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),
+        day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function parseDate(s){return new Date(s+'T12:00:00')}
+function daysBetween(a,b){
+  const d1=parseDate(a),d2=parseDate(b);
+  return Math.round((d2-d1)/(86400000));
+}
+function addDays(s,n){const d=parseDate(s);d.setDate(d.getDate()+n);return formatDate(d)}
+function formatDateDisplay(s){
+  const d=parseDate(s);
+  return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+}
+
+// ── Training Plan ──
+const phases=[
+  {name:'Build Habit',days:[1,21],plan:['Run/Walk','Rest','Run/Walk','Rest','Run/Walk','Rest or Walk','Rest']},
+  {name:'Build Distance',days:[22,42],plan:['Run','Rest','Run','Walk','Run','Long Run','Rest']},
+  {name:'Build Speed',days:[43,63],plan:['Tempo Run','Rest','Intervals','Easy Walk','Run','Long Run','Rest']},
+  {name:'Peak',days:[64,90],plan:['Tempo Run','Rest','Intervals','Easy Run','Run','Long Run','Rest']}
+];
+function getPhase(dayNum){
+  for(const p of phases) if(dayNum>=p.days[0]&&dayNum<=p.days[1]) return p;
+  return phases[3];
+}
+function getCurrentDay(){
+  if(!data.startDate) return 1;
+  const d=daysBetween(data.startDate,today())+1;
+  return Math.max(1,Math.min(90,d));
+}
+
+// ── Streak ──
+function calcStreak(){
+  let streak=0,d=today();
+  while(true){
+    if(data.logs[d]){streak++;d=addDays(d,-1)}
+    else break;
+  }
+  return streak;
+}
+
+// ── Stats ──
+function calcStats(){
+  let totalDist=0,totalTime=0,count=0;
+  for(const key in data.logs){
+    const l=data.logs[key];
+    if(l.type!=='rest'&&l.distance&&l.time){
+      totalDist+=Number(l.distance);totalTime+=Number(l.time);count++;
+    }
+  }
+  const avgPace=totalDist>0?totalTime/totalDist:0;
+  return{totalDist,totalTime,avgPace,count};
+}
+function formatPace(p){
+  if(!p||!isFinite(p))return'--:--';
+  const m=Math.floor(p),s=Math.round((p-m)*60);
+  return`${m}:${String(s).padStart(2,'0')}`;
+}
+
+// ── DOM Helpers ──
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+
+// ── Onboarding ──
+function initOnboarding(){
+  if(data.onboarded){
+    $('#onboarding').classList.add('hidden');
+    $('#mainApp').style.display='';
+    return;
+  }
+  const todayStr=today();
+  $('#obStartDate').value=todayStr;
+  $('#onboardNext').onclick=()=>{
+    $('#onboardStep1').classList.remove('active');
+    $('#onboardStep2').classList.add('active');
+  };
+  $('#onboardStart').onclick=()=>{
+    data.onboarded=true;
+    data.startDate=$('#obStartDate').value||todayStr;
+    data.baselineDistance=parseFloat($('#obDistance').value)||1.17;
+    data.baselineTime=parseInt($('#obTime').value)||17;
+    data.reminderTime=$('#obReminder').value||'06:30';
+    data.reminderEnabled=true;
+    saveData(data);
+    $('#onboarding').classList.add('hidden');
+    $('#mainApp').style.display='';
+    renderAll();
+    scheduleNotification();
+  };
+}
+
+// ── Navigation ──
+let currentScreen='screenHome';
+function switchScreen(id){
+  currentScreen=id;
+  $$('.screen').forEach(s=>s.classList.remove('active'));
+  $('#'+id).classList.add('active');
+  $$('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.screen===id));
+  if(id==='screenProgress')renderProgress();
+  if(id==='screenSettings')renderSettings();
+}
+$('#bottomNav').addEventListener('click',e=>{
+  const tab=e.target.closest('.nav-tab');
+  if(tab)switchScreen(tab.dataset.screen);
+});
+
+// ── Dashboard ──
+function renderDashboard(){
+  const dayNum=getCurrentDay();
+  const phase=getPhase(dayNum);
+  const stats=calcStats();
+  const streak=calcStreak();
+  const completedDays=Object.keys(data.logs).length;
+
+  $('#phaseLabel').textContent=`Phase ${phases.indexOf(phase)+1}: ${phase.name}`;
+  $('#streakCount').textContent=streak;
+  $('#ringDay').textContent=`Day ${dayNum}`;
+  $('#ringSub').textContent=`${completedDays} completed \u00B7 ${90-completedDays} to go`;
+
+  // Ring progress
+  const pct=completedDays/90;
+  const circ=2*Math.PI*88;
+  const offset=circ-(pct*circ);
+  $('#ringProgress').style.strokeDashoffset=offset;
+
+  // Stats
+  $('#statMiles').textContent=stats.totalDist.toFixed(1);
+  $('#statPace').textContent=formatPace(stats.avgPace);
+  $('#statMins').textContent=Math.round(stats.totalTime);
+
+  renderWater();
+  renderLogBtn();
+  renderWeekPlan(dayNum,phase);
+  renderCalendar(dayNum);
+}
+
+// ── Water ──
+function renderWater(){
+  const goal=data.waterGoal||10;
+  const todayStr=today();
+  const filled=data.waterLogs[todayStr]||0;
+  let html='';
+  for(let i=0;i<goal;i++){
+    html+=`<div class="water-glass${i<filled?' filled':''}" data-idx="${i}"></div>`;
+  }
+  html+=`<span class="water-count">${filled} / ${goal}</span>`;
+  $('#waterRow').innerHTML=html;
+  $$('.water-glass').forEach(g=>{
+    g.addEventListener('click',()=>{
+      const idx=parseInt(g.dataset.idx);
+      const todayStr2=today();
+      const cur=data.waterLogs[todayStr2]||0;
+      data.waterLogs[todayStr2]=(idx<cur)?idx:idx+1;
+      saveData(data);
+      renderWater();
+    });
+  });
+}
+
+// ── Log Button ──
+function renderLogBtn(){
+  const todayStr=today();
+  const btn=$('#logBtn');
+  if(data.logs[todayStr]){
+    btn.className='btn btn-muted';
+    btn.textContent='\u2713 Today Logged \u2014 Tap to Edit';
+  }else{
+    btn.className='btn btn-primary';
+    btn.style.fontSize='17px';
+    btn.textContent='+ Log Today\'s Run';
+  }
+  btn.onclick=()=>openModal(todayStr);
+}
+
+// ── Week Plan ──
+function renderWeekPlan(dayNum,phase){
+  const todayDate=parseDate(today());
+  const todayDow=todayDate.getDay();
+  // Monday=0 in our week, JS Sunday=0
+  const mondayOffset=todayDow===0?-6:1-todayDow;
+  const mondayDate=new Date(todayDate);mondayDate.setDate(todayDate.getDate()+mondayOffset);
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  let html='';
+  for(let i=0;i<7;i++){
+    const d=new Date(mondayDate);d.setDate(mondayDate.getDate()+i);
+    const ds=formatDate(d);
+    const isToday=ds===today();
+    const logged=!!data.logs[ds];
+    const activity=phase.plan[i];
+    html+=`<div class="week-row${isToday?' today':''}">
+      <span class="week-day">${days[i]}</span>
+      <span class="week-activity">${activity}</span>
+      <span class="week-check">${logged?'\u2713':''}</span>
+    </div>`;
+  }
+  $('#weekPlan').innerHTML=html;
+}
+
+// ── Calendar Grid ──
+function renderCalendar(dayNum){
+  const todayStr=today();
+  let html='';
+  for(let i=1;i<=90;i++){
+    const ds=addDays(data.startDate,i-1);
+    const log=data.logs[ds];
+    const isToday=ds===todayStr;
+    const isPast=daysBetween(ds,todayStr)>0;
+    let cls='cal-day';
+    if(isToday) cls+=' today';
+    if(log){
+      cls+=log.type==='rest'?' rest':' completed';
+    }else if(isPast&&daysBetween(data.startDate,ds)>=0){
+      cls+=' missed';
+    }else{
+      cls+=' future';
+    }
+    html+=`<div class="${cls}" data-date="${ds}">${i}</div>`;
+  }
+  $('#calGrid').innerHTML=html;
+  $$('.cal-day').forEach(d=>{
+    d.addEventListener('click',()=>openModal(d.dataset.date));
+  });
+}
+
+// ── Modal ──
+let modalDate='';
+let modalType='run';
+let modalFeel='';
+
+function openModal(dateStr){
+  modalDate=dateStr;
+  const existing=data.logs[dateStr];
+  const dayNum=daysBetween(data.startDate,dateStr)+1;
+  const dateLabel=formatDateDisplay(dateStr);
+  $('#modalTitle').textContent=existing?`EDIT \u2014 ${dateLabel}`:`LOG \u2014 ${dateLabel}`;
+
+  if(existing){
+    setModalType(existing.type);
+    $('#logDistance').value=existing.distance||'';
+    $('#logTime').value=existing.time||'';
+    setModalFeel(existing.feel||'');
+    $('#logNotes').value=existing.notes||'';
+    $('#deleteWrap').style.display='';
+  }else{
+    setModalType('run');
+    $('#logDistance').value='';
+    $('#logTime').value='';
+    setModalFeel('');
+    $('#logNotes').value='';
+    $('#deleteWrap').style.display='none';
+  }
+  $('#modalOverlay').classList.add('show');
+  $('#modalSheet').classList.add('show');
+}
+
+function closeModal(){
+  $('#modalOverlay').classList.remove('show');
+  $('#modalSheet').classList.remove('show');
+}
+
+function setModalType(t){
+  modalType=t;
+  $$('#typeGroup .toggle-btn').forEach(b=>b.classList.toggle('active',b.dataset.type===t));
+  $('#runFields').style.display=t==='rest'?'none':'';
+}
+
+function setModalFeel(f){
+  modalFeel=f;
+  $$('#feelGroup .feel-btn').forEach(b=>{
+    b.className='feel-btn';
+    if(b.dataset.feel===f) b.classList.add('active-'+f);
+  });
+}
+
+$('#typeGroup').addEventListener('click',e=>{
+  const b=e.target.closest('.toggle-btn');
+  if(b) setModalType(b.dataset.type);
+});
+$('#feelGroup').addEventListener('click',e=>{
+  const b=e.target.closest('.feel-btn');
+  if(b) setModalFeel(b.dataset.feel);
+});
+$('#modalOverlay').onclick=closeModal;
+$('#modalCancel').onclick=closeModal;
+
+$('#modalSave').onclick=()=>{
+  const entry={type:modalType,loggedAt:new Date().toISOString()};
+  if(modalType!=='rest'){
+    entry.distance=parseFloat($('#logDistance').value)||0;
+    entry.time=parseFloat($('#logTime').value)||0;
+    entry.feel=modalFeel;
+  }
+  entry.notes=$('#logNotes').value.trim();
+  data.logs[modalDate]=entry;
+  saveData(data);
+  closeModal();
+
+  // Check milestones for confetti
+  const dayNum=daysBetween(data.startDate,modalDate)+1;
+  if(modalType!=='rest'){
+    const isDistancePR=checkDistancePR(entry.distance);
+    if([30,60,90].includes(dayNum)||isDistancePR) fireConfetti();
+  }
+  renderAll();
+};
+
+$('#modalDelete').onclick=()=>{
+  if(confirm('Delete this entry?')){
+    delete data.logs[modalDate];
+    saveData(data);
+    closeModal();
+    renderAll();
+  }
+};
+
+function checkDistancePR(dist){
+  if(!dist)return false;
+  for(const k in data.logs){
+    if(k===modalDate)continue;
+    const l=data.logs[k];
+    if(l.type!=='rest'&&l.distance>=dist)return false;
+  }
+  return true;
+}
+
+// ── Confetti ──
+function fireConfetti(){
+  const wrap=document.createElement('div');
+  wrap.className='confetti-wrap';
+  const colors=['#FF4D00','#ff6a00','#00E676','#448AFF','#FFD600','#FF1744','#fff'];
+  for(let i=0;i<50;i++){
+    const p=document.createElement('div');p.className='confetti-piece';
+    p.style.left=Math.random()*100+'%';
+    p.style.animationDelay=Math.random()*0.5+'s';
+    p.style.animationDuration=(1+Math.random())+'s';
+    p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.borderRadius=Math.random()>0.5?'50%':'2px';
+    p.style.width=(6+Math.random()*8)+'px';
+    p.style.height=(6+Math.random()*8)+'px';
+    wrap.appendChild(p);
+  }
+  document.body.appendChild(wrap);
+  setTimeout(()=>wrap.remove(),2500);
+}
+
+// ── Progress Screen ──
+let chartTab='distance';
+
+$('#chartTabs').addEventListener('click',e=>{
+  const t=e.target.closest('.chart-tab');
+  if(!t)return;
+  chartTab=t.dataset.tab;
+  $$('.chart-tab').forEach(c=>c.classList.toggle('active',c.dataset.tab===chartTab));
+  renderChart();
+});
+
+function renderProgress(){
+  renderChart();
+  renderHistory();
+}
+
+function getRunLogs(){
+  const entries=[];
+  for(const k in data.logs){
+    const l=data.logs[k];
+    if(l.type!=='rest'&&l.distance&&l.time){
+      entries.push({date:k,...l});
+    }
+  }
+  entries.sort((a,b)=>a.date.localeCompare(b.date));
+  return entries;
+}
+
+function renderChart(){
+  const canvas=$('#progressChart');
+  const entries=getRunLogs();
+  if(entries.length<2){
+    canvas.style.display='none';
+    $('#chartEmpty').style.display='';
+    return;
+  }
+  canvas.style.display='';
+  $('#chartEmpty').style.display='none';
+
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.getBoundingClientRect();
+  canvas.width=rect.width*dpr;
+  canvas.height=rect.height*dpr;
+  ctx.scale(dpr,dpr);
+  const W=rect.width,H=rect.height;
+
+  let values;
+  if(chartTab==='distance') values=entries.map(e=>e.distance);
+  else if(chartTab==='pace') values=entries.map(e=>e.time/e.distance);
+  else values=entries.map(e=>e.time);
+
+  const padL=40,padR=16,padT=16,padB=32;
+  const gW=W-padL-padR,gH=H-padT-padB;
+  const minV=Math.min(...values)*0.9,maxV=Math.max(...values)*1.1;
+  const rangeV=maxV-minV||1;
+
+  ctx.clearRect(0,0,W,H);
+
+  // Grid lines
+  ctx.strokeStyle='#1a1a1a';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=padT+(gH/4)*i;
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();
+    ctx.fillStyle='#555';ctx.font='10px JetBrains Mono';ctx.textAlign='right';
+    const val=maxV-(rangeV/4)*i;
+    let label;
+    if(chartTab==='pace') label=formatPace(val);
+    else if(chartTab==='distance') label=val.toFixed(1);
+    else label=Math.round(val)+'';
+    ctx.fillText(label,padL-6,y+3);
+  }
+
+  // Points
+  const pts=values.map((v,i)=>{
+    const x=padL+(gW/(values.length-1))*i;
+    const y=padT+gH-(((v-minV)/rangeV)*gH);
+    return{x,y};
+  });
+
+  // Gradient fill
+  const grad=ctx.createLinearGradient(0,padT,0,H-padB);
+  grad.addColorStop(0,'rgba(255,77,0,0.3)');
+  grad.addColorStop(1,'rgba(255,77,0,0)');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x,H-padB);
+  pts.forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.lineTo(pts[pts.length-1].x,H-padB);
+  ctx.closePath();
+  ctx.fillStyle=grad;ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x,pts[0].y);
+  for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x,pts[i].y);
+  ctx.strokeStyle='#FF4D00';ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.stroke();
+
+  // Dots
+  pts.forEach(p=>{
+    ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);
+    ctx.fillStyle='#FF4D00';ctx.fill();
+    ctx.strokeStyle='#0a0a0a';ctx.lineWidth=2;ctx.stroke();
+  });
+
+  // X labels
+  ctx.fillStyle='#555';ctx.font='9px JetBrains Mono';ctx.textAlign='center';
+  const maxLabels=6;
+  const step=Math.max(1,Math.floor(entries.length/maxLabels));
+  entries.forEach((e,i)=>{
+    if(i%step===0||i===entries.length-1){
+      const d=parseDate(e.date);
+      const label=(d.getMonth()+1)+'/'+d.getDate();
+      ctx.fillText(label,pts[i].x,H-padB+16);
+    }
+  });
+}
+
+function renderHistory(){
+  const all=[];
+  for(const k in data.logs) all.push({date:k,...data.logs[k]});
+  all.sort((a,b)=>b.date.localeCompare(a.date));
+  if(!all.length){
+    $('#historyList').innerHTML='<div style="text-align:center;padding:32px;color:var(--text-dim)">No activities logged yet</div>';
+    return;
+  }
+  let html='';
+  all.forEach(e=>{
+    const badgeCls=e.type==='rest'?'badge-rest':e.type==='run-walk'?'badge-run-walk':'badge-run';
+    const typeLabel=e.type==='rest'?'Rest':e.type==='run-walk'?'Run/Walk':'Run';
+    const pace=e.distance?formatPace(e.time/e.distance):'';
+    html+=`<div class="history-card" data-date="${e.date}">
+      <div class="history-top">
+        <span class="history-date">${formatDateDisplay(e.date)}</span>
+        <span class="history-badge ${badgeCls}">${typeLabel}</span>
+      </div>
+      ${e.type!=='rest'?`<div class="history-stats">
+        <span>${(e.distance||0).toFixed(2)} mi</span>
+        <span>${e.time||0} min</span>
+        <span>${pace}/mi</span>
+      </div>`:''}
+      ${e.notes?`<div class="history-notes">${escapeHtml(e.notes)}</div>`:''}
+    </div>`;
+  });
+  $('#historyList').innerHTML=html;
+  $$('.history-card').forEach(c=>{
+    c.addEventListener('click',()=>openModal(c.dataset.date));
+  });
+}
+
+function escapeHtml(s){
+  const d=document.createElement('div');d.textContent=s;return d.innerHTML;
+}
+
+// ── Settings ──
+function renderSettings(){
+  const toggle=$('#toggleReminder');
+  toggle.classList.toggle('on',!!data.reminderEnabled);
+  toggle.onclick=()=>{
+    data.reminderEnabled=!data.reminderEnabled;
+    saveData(data);
+    renderSettings();
+    if(data.reminderEnabled) requestNotificationPermission();
+  };
+  $('#settingReminderTime').value=data.reminderTime||'06:30';
+  $('#settingWaterGoal').value=data.waterGoal||10;
+  $('#settingStart').textContent=data.startDate?formatDateDisplay(data.startDate):'--';
+  const endDate=data.startDate?addDays(data.startDate,89):'';
+  $('#settingEnd').textContent=endDate?formatDateDisplay(endDate):'--';
+}
+
+$('#settingReminderTime').addEventListener('change',e=>{
+  data.reminderTime=e.target.value;saveData(data);scheduleNotification();
+});
+$('#settingWaterGoal').addEventListener('change',e=>{
+  data.waterGoal=Math.max(1,Math.min(20,parseInt(e.target.value)||10));
+  saveData(data);renderWater();
+});
+$('#btnExport').onclick=()=>{
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='run90-export.json';a.click();URL.revokeObjectURL(a.href);
+};
+$('#btnReset').onclick=()=>{
+  if(confirm('Reset ALL data? This cannot be undone.')){
+    if(confirm('Are you really sure? Everything will be deleted.')){
+      localStorage.removeItem(STORE_KEY);
+      location.reload();
+    }
+  }
+};
+
+// ── Install Banner ──
+function checkInstallBanner(){
+  const isStandalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  const dismissed=localStorage.getItem('run90_banner_dismissed');
+  if(!isStandalone&&!dismissed){
+    $('#installBanner').classList.add('show');
+  }
+  $('#dismissBanner').onclick=()=>{
+    $('#installBanner').classList.remove('show');
+    localStorage.setItem('run90_banner_dismissed','1');
+  };
+}
+
+// ── Notifications ──
+function requestNotificationPermission(){
+  if('Notification' in window&&Notification.permission==='default'){
+    Notification.requestPermission();
+  }
+}
+
+let notifTimer=null;
+function scheduleNotification(){
+  if(notifTimer)clearTimeout(notifTimer);
+  if(!data.reminderEnabled)return;
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+
+  const messages=[
+    `Day ${getCurrentDay()} of 90 — let's move!`,
+    `${calcStreak()} day streak! Keep it alive.`,
+    `Lace up. 90 days is built one run at a time.`,
+    `Your future self will thank you. Log today's run.`,
+    `Consistency beats perfection. Get out there.`,
+    `Day ${getCurrentDay()}: no shortcuts, no excuses.`
+  ];
+
+  function schedNext(){
+    const now=new Date();
+    const [h,m]=(data.reminderTime||'06:30').split(':').map(Number);
+    const target=new Date(now);target.setHours(h,m,0,0);
+    if(target<=now) target.setDate(target.getDate()+1);
+    const delay=target-now;
+    notifTimer=setTimeout(()=>{
+      const msg=messages[Math.floor(Math.random()*messages.length)];
+      if(navigator.serviceWorker&&navigator.serviceWorker.controller){
+        navigator.serviceWorker.ready.then(reg=>{
+          reg.showNotification('Run90',{body:msg,icon:'icon-192.png',badge:'icon-192.png'});
+        }).catch(()=>new Notification('Run90',{body:msg}));
+      }else{
+        try{new Notification('Run90',{body:msg})}catch(e){}
+      }
+      schedNext();
+    },delay);
+  }
+  schedNext();
+}
+
+// ── Chart resize ──
+window.addEventListener('resize',()=>{
+  if(currentScreen==='screenProgress')renderChart();
+});
+
+// ── Render All ──
+function renderAll(){
+  if(!data.onboarded)return;
+  renderDashboard();
+  if(currentScreen==='screenProgress')renderProgress();
+  if(currentScreen==='screenSettings')renderSettings();
+}
+
+// ── Init ──
+function init(){
+  initOnboarding();
+  if(data.onboarded){
+    renderAll();
+    scheduleNotification();
+  }
+  checkInstallBanner();
+
+  // Register service worker
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+}
+
+init();
+})();
+</script>
+</body>
+</html>
