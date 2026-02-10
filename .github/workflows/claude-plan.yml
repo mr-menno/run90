@@ -13,6 +13,7 @@ jobs:
     permissions:
       contents: read
       issues: write
+      id-token: write
     steps:
       - name: Check allowlist
         env:
