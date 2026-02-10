@@ -1,4 +1,4 @@
-const CACHE_NAME = 'run90-20260210144619-bbf2e158';
+const CACHE_NAME = 'run90-20260210145212-f6ed0436';
 const BASE = self.registration.scope;
 const ASSETS = [
   './',
