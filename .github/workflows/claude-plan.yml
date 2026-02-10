@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: write
       issues: write
       id-token: write
     steps:
@@ -33,6 +34,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           trigger_phrase: "/plan"
+          show_full_output: true
           prompt: |
             Analyze this GitHub issue and create a detailed implementation plan.
             Read the codebase and create a plan that includes:
