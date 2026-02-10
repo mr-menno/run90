@@ -140,15 +140,34 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .streak-badge svg{width:16px;height:16px;fill:var(--accent)}
 
 /* Progress Ring */
-.ring-section{display:flex;flex-direction:column;align-items:center;padding:16px 0}
-.ring-wrap{position:relative;width:200px;height:200px}
+.ring-section{
+  display:flex;flex-direction:column;align-items:center;padding:16px 0;
+  position:sticky;top:0;z-index:50;
+  border-bottom:1px solid transparent;
+  transition:padding .25s ease,background .25s ease,border-color .25s ease,gap .25s ease,flex-direction 0s;
+}
+.ring-section.compact{
+  flex-direction:row;justify-content:center;gap:16px;
+  padding:8px 16px;
+  background:rgba(10,10,10,.95);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom-color:var(--border);
+}
+.ring-wrap{position:relative;width:200px;height:200px;flex-shrink:0;transition:width .25s ease,height .25s ease}
+.ring-section.compact .ring-wrap{width:54px;height:54px}
+.ring-section.compact .ring-wrap svg{width:54px;height:54px}
 .ring-center{
   position:absolute;inset:0;display:flex;flex-direction:column;
   align-items:center;justify-content:center;
 }
-.ring-day{font-family:var(--font-display);font-size:48px;line-height:1}
-.ring-of{font-size:14px;color:var(--text-dim)}
-.ring-sub{font-size:13px;color:var(--text-dim);margin-top:8px;font-weight:500}
+.ring-day{font-family:var(--font-display);font-size:48px;line-height:1;transition:font-size .25s ease;white-space:nowrap}
+.ring-section.compact .ring-day{font-size:13px}
+.ring-of{font-size:14px;color:var(--text-dim);transition:font-size .25s ease}
+.ring-section.compact .ring-of{font-size:10px}
+.ring-sub{font-size:13px;color:var(--text-dim);margin-top:8px;font-weight:500;
+  max-height:24px;overflow:hidden;
+  transition:opacity .25s ease,max-height .25s ease,margin .25s ease}
+.ring-section.compact .ring-sub{opacity:0;max-height:0;margin-top:0}
 
 /* Stat Cards */
 .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:8px 0}
@@ -698,6 +717,15 @@ $('#bottomNav').addEventListener('click',e=>{
   const tab=e.target.closest('.nav-tab');
   if(tab)switchScreen(tab.dataset.screen);
 });
+
+// ── Sticky Ring Header ──
+(function(){
+  const sh=$('#screenHome');
+  const ring=sh.querySelector('.ring-section');
+  sh.addEventListener('scroll',function(){
+    ring.classList.toggle('compact',this.scrollTop>60);
+  },{passive:true});
+})();
 
 // ── Dashboard ──
 function renderDashboard(){
