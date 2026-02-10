@@ -28,6 +28,10 @@
   --font-mono:'JetBrains Mono',monospace;
   --font-body:'DM Sans',sans-serif;
 }
+.light-mode{
+  --bg:#f5f5f5;--surface:#ffffff;--border:#ddd;
+  --text:#111;--text-dim:#555;--text-muted:#aaa;
+}
 html,body{
   height:100%;width:100%;overflow:hidden;
   background:var(--bg);color:var(--text);
@@ -108,7 +112,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 /* Bottom Nav */
 .bottom-nav{
   position:fixed;bottom:0;left:0;right:0;z-index:100;
-  background:rgba(14,14,14,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  background:color-mix(in srgb, var(--bg) 95%, transparent);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-top:1px solid var(--border);
   display:flex;
   padding:8px 0 calc(var(--safe-bottom) + 8px);
@@ -149,7 +153,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .ring-section.compact{
   flex-direction:row;justify-content:center;gap:16px;
   padding:8px 16px;
-  background:rgba(10,10,10,.95);
+  background:color-mix(in srgb, var(--bg) 95%, transparent);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-bottom-color:var(--border);
 }
@@ -220,7 +224,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   cursor:pointer;transition:all .15s ease;
   position:relative;
 }
-.cal-day.future{background:#1a1a1a;color:var(--text-muted)}
+.cal-day.future{background:var(--surface);color:var(--text-muted)}
 .cal-day.completed{background:rgba(0,230,118,.2);color:var(--success)}
 .cal-day.rest{background:rgba(68,138,255,.2);color:var(--info)}
 .cal-day.missed{background:rgba(255,23,68,.15);color:var(--danger)}
@@ -350,7 +354,11 @@ canvas#progressChart{width:100%;height:200px;display:block}
 /* Animations */
 @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .fade-in{animation:fadeIn .4s ease}
+
+/* Ring track adapts to theme */
+.ring-wrap svg circle:first-child{stroke:var(--border)}
 </style>
+<script>(function(){if(localStorage.getItem('run90_light_mode')==='1')document.documentElement.classList.add('light-mode')})()</script>
 </head>
 <body>
 
@@ -506,6 +514,13 @@ canvas#progressChart{width:100%;height:200px;display:block}
             <div class="setting-desc">Get notified to log your run</div>
           </div>
           <div class="toggle-switch" id="toggleReminder"></div>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Light Mode</div>
+            <div class="setting-desc">Switch to a light color theme</div>
+          </div>
+          <div class="toggle-switch" id="toggleLightMode"></div>
         </div>
         <div class="setting-row">
           <div class="setting-label">Reminder Time</div>
@@ -1025,12 +1040,17 @@ function renderChart(){
 
   ctx.clearRect(0,0,W,H);
 
+  const style=getComputedStyle(document.documentElement);
+  const colorBorder=style.getPropertyValue('--border').trim()||'#2a2a2a';
+  const colorTextDim=style.getPropertyValue('--text-muted').trim()||'#555';
+  const colorDotStroke=style.getPropertyValue('--bg').trim()||'#0a0a0a';
+
   // Grid lines
-  ctx.strokeStyle='#1a1a1a';ctx.lineWidth=1;
+  ctx.strokeStyle=colorBorder;ctx.lineWidth=1;
   for(let i=0;i<=4;i++){
     const y=padT+(gH/4)*i;
     ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();
-    ctx.fillStyle='#555';ctx.font='10px JetBrains Mono';ctx.textAlign='right';
+    ctx.fillStyle=colorTextDim;ctx.font='10px JetBrains Mono';ctx.textAlign='right';
     const val=maxV-(rangeV/4)*i;
     let label;
     if(chartTab==='pace') label=formatPace(val);
@@ -1067,11 +1087,11 @@ function renderChart(){
   pts.forEach(p=>{
     ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);
     ctx.fillStyle='#FF4D00';ctx.fill();
-    ctx.strokeStyle='#0a0a0a';ctx.lineWidth=2;ctx.stroke();
+    ctx.strokeStyle=colorDotStroke;ctx.lineWidth=2;ctx.stroke();
   });
 
   // X labels
-  ctx.fillStyle='#555';ctx.font='9px JetBrains Mono';ctx.textAlign='center';
+  ctx.fillStyle=colorTextDim;ctx.font='9px JetBrains Mono';ctx.textAlign='center';
   const maxLabels=6;
   const step=Math.max(1,Math.floor(entries.length/maxLabels));
   entries.forEach((e,i)=>{
@@ -1119,6 +1139,17 @@ function escapeHtml(s){
   const d=document.createElement('div');d.textContent=s;return d.innerHTML;
 }
 
+// ── Theme ──
+const THEME_KEY='run90_light_mode';
+function isLightMode(){return localStorage.getItem(THEME_KEY)==='1'}
+function applyTheme(light){
+  document.documentElement.classList.toggle('light-mode',light);
+  document.body.classList.toggle('light-mode',light);
+  document.querySelector('meta[name="theme-color"]').content=light?'#f5f5f5':'#0a0a0a';
+  if(light) localStorage.setItem(THEME_KEY,'1');
+  else localStorage.removeItem(THEME_KEY);
+}
+
 // ── Settings ──
 function renderSettings(){
   const toggle=$('#toggleReminder');
@@ -1128,6 +1159,13 @@ function renderSettings(){
     saveData(data);
     renderSettings();
     if(data.reminderEnabled) requestNotificationPermission();
+  };
+  const lightToggle=$('#toggleLightMode');
+  lightToggle.classList.toggle('on',isLightMode());
+  lightToggle.onclick=()=>{
+    applyTheme(!isLightMode());
+    lightToggle.classList.toggle('on',isLightMode());
+    if(currentScreen==='screenProgress') renderChart();
   };
   $('#settingReminderTime').value=data.reminderTime||'06:30';
   $('#settingWaterGoal').value=data.waterGoal||10;
@@ -1228,6 +1266,8 @@ function renderAll(){
 
 // ── Init ──
 function init(){
+  // Apply saved theme (body may not have class yet if html has it from preload)
+  applyTheme(isLightMode());
   initOnboarding();
   if(data.onboarded){
     renderAll();
