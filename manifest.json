@@ -1,7 +1,7 @@
 {
   "name": "Run90 — 90 Day Running Tracker",
   "short_name": "Run90",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
