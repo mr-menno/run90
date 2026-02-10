@@ -1,0 +1,37 @@
+name: Bump SW Cache Version
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'sw.js'
+
+jobs:
+  bump-cache:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bump CACHE_NAME in sw.js
+        run: |
+          SHORT_SHA="${GITHUB_SHA::8}"
+          TIMESTAMP="$(date -u +%Y%m%d%H%M%S)"
+          NEW_CACHE="run90-${TIMESTAMP}-${SHORT_SHA}"
+          sed -i "s/const CACHE_NAME = '.*'/const CACHE_NAME = '${NEW_CACHE}'/" sw.js
+          echo "Cache name: ${NEW_CACHE}"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add sw.js
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Bump SW cache to ${NEW_CACHE}"
+            git push
+          fi
+        env:
+          NEW_CACHE: ${{ env.NEW_CACHE }}
