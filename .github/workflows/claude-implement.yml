@@ -8,13 +8,25 @@ jobs:
   implement:
     if: |
       github.event.issue.pull_request == null &&
-      contains(github.event.comment.body, '@claude-implement')
+      contains(github.event.comment.body, '/implement')
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
       issues: write
     steps:
+      - name: Check allowlist
+        env:
+          ALLOWED_USERS: mr-menno
+          COMMENTER: ${{ github.event.comment.user.login }}
+        run: |
+          if echo ",$ALLOWED_USERS," | grep -q ",$COMMENTER,"; then
+            echo "User $COMMENTER is authorized"
+          else
+            echo "::error::User $COMMENTER is not authorized to trigger Claude"
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
 
       - uses: anthropics/claude-code-action@v1

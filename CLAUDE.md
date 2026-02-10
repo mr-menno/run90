@@ -17,5 +17,6 @@
 ## CI Workflows
 
 - **bump-sw-cache.yml** — Automatically bumps `CACHE_NAME` in `sw.js` on every push to main.
-- **claude-plan.yml** — When an issue is labeled `needs-plan`, Claude reads the codebase and posts an implementation plan as an issue comment.
-- **claude-implement.yml** — When someone comments `@claude-implement` on an issue, Claude executes the plan: writes code, commits, and opens a PR.
+- **claude-plan.yml** — When an authorized user comments `/plan` on an issue, Claude reads the codebase and posts an implementation plan as an issue comment.
+- **claude-implement.yml** — When an authorized user comments `/implement` on an issue, Claude executes the plan: writes code, commits, and opens a PR.
+- Both workflows check the commenter against an `ALLOWED_USERS` allowlist (currently: `mr-menno`). To add users, edit the `ALLOWED_USERS` env var (comma-separated) in each workflow file.
