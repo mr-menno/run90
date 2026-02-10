@@ -32,19 +32,12 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          direct_prompt: |
+          trigger_phrase: "/plan"
+          prompt: |
             Analyze this GitHub issue and create a detailed implementation plan.
-
-            Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
-
-            Description:
-            ${{ github.event.issue.body }}
-
             Read the codebase and create a plan that includes:
             1. Files that need to be created or modified
             2. Specific changes required in each file
             3. Testing approach
             4. Any risks or trade-offs
-
             Format the plan clearly with markdown. Do NOT make any code changes.
-          max_turns: "10"

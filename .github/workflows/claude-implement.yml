@@ -33,17 +33,8 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          direct_prompt: |
-            Implement the solution for GitHub issue #${{ github.event.issue.number }}.
-
-            Issue: ${{ github.event.issue.title }}
-            Description: ${{ github.event.issue.body }}
-
-            Review the implementation plan in the issue comments, then:
-            1. Implement all required changes following the plan
-            2. Follow the conventions in CLAUDE.md
-            3. Create a feature branch named issue-${{ github.event.issue.number }}
-            4. Commit with message referencing the issue (Closes #${{ github.event.issue.number }})
-            5. Create a pull request linking to the issue
-          max_turns: "25"
-          allowed_tools: "Bash,Read,Edit,Write,Glob,Grep"
+          trigger_phrase: "/implement"
+          prompt: |
+            Implement the solution for this GitHub issue based on the approved plan in the comments.
+            Follow the conventions in CLAUDE.md.
+            Create a feature branch, commit with a message referencing the issue, and open a PR.
