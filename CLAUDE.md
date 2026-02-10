@@ -17,6 +17,18 @@
 ## CI Workflows
 
 - **bump-sw-cache.yml** — Automatically bumps `CACHE_NAME` in `sw.js` on every push to main.
-- **claude-plan.yml** — When an authorized user comments `/plan` on an issue, Claude reads the codebase and posts an implementation plan as an issue comment.
-- **claude-implement.yml** — When an authorized user comments `/implement` on an issue, Claude executes the plan: writes code, commits, and opens a PR.
-- Both workflows check the commenter against an `ALLOWED_USERS` allowlist (currently: `mr-menno`). To add users, edit the `ALLOWED_USERS` env var (comma-separated) in each workflow file.
+- **claude.yml** — Triggers Claude on any issue or PR comment containing `@claude`. Only authorized users can trigger it (allowlist check). To add users, edit the `ALLOWED_USERS` env var (comma-separated) in the workflow file.
+
+## Using Claude via Workflow
+
+Mention `@claude` in any issue or PR comment to trigger Claude. Examples:
+
+- `@claude implement this issue`
+- `@claude review this PR`
+- `@claude fix the failing tests`
+
+Only users listed in `ALLOWED_USERS` in `claude.yml` can trigger Claude (currently: `mr-menno`).
+
+## Deployment
+
+The app is deployed to GitHub Pages at [mr-menno.github.io/run90](https://mr-menno.github.io/run90/) from the `main` branch.
