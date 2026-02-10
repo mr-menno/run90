@@ -27,7 +27,9 @@ Mention `@claude` in any issue or PR comment to trigger Claude. Examples:
 - `@claude review this PR`
 - `@claude fix the failing tests`
 
-Only users listed in `ALLOWED_USERS` in `claude.yml` can trigger Claude (currently: `mr-menno`).
+Only users listed in `ALLOWED_USERS` in `claude.yml` can trigger Claude (currently: `mr-menno`). Anyone else who tries will get an authorization error and the job will stop immediately.
+
+The workflow authenticates using a `CLAUDE_CODE_OAUTH_TOKEN` stored as a repository secret (Settings → Secrets → Actions). This is passed to the action as the `claude_code_oauth_token` input.
 
 ## Deployment
 
