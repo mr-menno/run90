@@ -383,8 +383,12 @@ canvas#progressChart{width:100%;height:200px;display:block}
           <input type="number" class="field-input" id="obDistance" value="1.17" step="0.01" min="0">
         </div>
         <div>
-          <div class="field-label">Current Time (minutes)</div>
-          <input type="number" class="field-input" id="obTime" value="17" step="1" min="0">
+          <div class="field-label">Current Time (mm:ss)</div>
+          <input type="text" class="field-input" id="obTime" value="17:00" placeholder="mm:ss" inputmode="numeric">
+        </div>
+        <div>
+          <div class="field-label">Current SPM (optional)</div>
+          <input type="number" class="field-input" id="obSpm" value="" step="1" min="0" max="300" placeholder="e.g. 160">
         </div>
         <div>
           <div class="field-label">Daily Reminder Time</div>
@@ -447,8 +451,8 @@ canvas#progressChart{width:100%;height:200px;display:block}
           <div class="stat-label">Avg Pace</div>
         </div>
         <div class="stat-card">
-          <div class="stat-val" id="statMins">0</div>
-          <div class="stat-label">Total Min</div>
+          <div class="stat-val" id="statMins">0:00</div>
+          <div class="stat-label">Total Time</div>
         </div>
       </div>
 
@@ -485,6 +489,7 @@ canvas#progressChart{width:100%;height:200px;display:block}
         <div class="chart-tab active" data-tab="distance">Distance</div>
         <div class="chart-tab" data-tab="pace">Pace</div>
         <div class="chart-tab" data-tab="duration">Duration</div>
+        <div class="chart-tab" data-tab="spm">SPM</div>
       </div>
       <div class="chart-wrap">
         <canvas id="progressChart" height="200"></canvas>
@@ -565,8 +570,12 @@ canvas#progressChart{width:100%;height:200px;display:block}
       <input type="number" class="field-input" id="logDistance" step="0.01" min="0" placeholder="0.00">
     </div>
     <div class="modal-field">
-      <div class="field-label">Time (minutes)</div>
-      <input type="number" class="field-input" id="logTime" step="1" min="0" placeholder="0">
+      <div class="field-label">Time (mm:ss)</div>
+      <input type="text" class="field-input" id="logTime" placeholder="mm:ss" inputmode="numeric">
+    </div>
+    <div class="modal-field">
+      <div class="field-label">SPM — Steps Per Minute (optional)</div>
+      <input type="number" class="field-input" id="logSpm" step="1" min="0" max="300" placeholder="e.g. 160">
     </div>
     <div class="field-label">How did it feel?</div>
     <div class="feel-group" id="feelGroup">
@@ -594,17 +603,57 @@ canvas#progressChart{width:100%;height:200px;display:block}
 
 // ── Data ──
 const STORE_KEY='run90_data';
+const DATA_VERSION=2;
 const defaultData={
-  onboarded:false,startDate:'',baselineDistance:1.17,baselineTime:17,
+  version:DATA_VERSION,
+  onboarded:false,startDate:'',baselineDistance:1.17,baselineTime:17,baselineSpm:null,
   reminderTime:'06:30',reminderEnabled:true,waterGoal:10,
   logs:{},waterLogs:{}
 };
 
+function migrateData(d){
+  const v=d.version||1;
+  if(v<2){
+    // v1→v2: add spm field to all existing log entries; baseline already stored as decimal minutes
+    for(const k in d.logs){
+      if(d.logs[k].spm===undefined) d.logs[k].spm=null;
+    }
+    if(d.baselineSpm===undefined) d.baselineSpm=null;
+    d.version=2;
+  }
+  return d;
+}
+
 function loadData(){
-  try{const d=JSON.parse(localStorage.getItem(STORE_KEY));return d||{...defaultData}}
-  catch(e){return{...defaultData}}
+  try{
+    const raw=localStorage.getItem(STORE_KEY);
+    if(!raw) return{...defaultData};
+    const d=JSON.parse(raw);
+    return migrateData(d);
+  }catch(e){return{...defaultData}}
 }
 function saveData(d){localStorage.setItem(STORE_KEY,JSON.stringify(d))}
+
+// ── Time Helpers (mm:ss ↔ decimal minutes) ──
+function parseMmSs(str){
+  if(!str||!String(str).trim()) return 0;
+  const s=String(str).trim();
+  // Accept "mm:ss" or plain number (treated as minutes)
+  if(s.includes(':')){
+    const parts=s.split(':');
+    const mins=parseInt(parts[0])||0;
+    const secs=parseInt(parts[1])||0;
+    return mins+secs/60;
+  }
+  return parseFloat(s)||0;
+}
+function formatMmSs(decimalMins){
+  if(!decimalMins||!isFinite(decimalMins)) return '0:00';
+  const totalSecs=Math.round(decimalMins*60);
+  const m=Math.floor(totalSecs/60);
+  const s=totalSecs%60;
+  return`${m}:${String(s).padStart(2,'0')}`;
+}
 
 let data=loadData();
 
@@ -655,15 +704,17 @@ function calcStreak(){
 
 // ── Stats ──
 function calcStats(){
-  let totalDist=0,totalTime=0,count=0;
+  let totalDist=0,totalTime=0,count=0,spmSum=0,spmCount=0;
   for(const key in data.logs){
     const l=data.logs[key];
     if(l.type!=='rest'&&l.distance&&l.time){
       totalDist+=Number(l.distance);totalTime+=Number(l.time);count++;
+      if(l.spm){spmSum+=Number(l.spm);spmCount++;}
     }
   }
   const avgPace=totalDist>0?totalTime/totalDist:0;
-  return{totalDist,totalTime,avgPace,count};
+  const avgSpm=spmCount>0?Math.round(spmSum/spmCount):0;
+  return{totalDist,totalTime,avgPace,count,avgSpm};
 }
 function formatPace(p){
   if(!p||!isFinite(p))return'--:--';
@@ -684,6 +735,7 @@ function initOnboarding(){
   }
   const todayStr=today();
   $('#obStartDate').value=todayStr;
+  setupMmSsInput($('#obTime'));
   $('#onboardNext').onclick=()=>{
     $('#onboardStep1').classList.remove('active');
     $('#onboardStep2').classList.add('active');
@@ -692,7 +744,8 @@ function initOnboarding(){
     data.onboarded=true;
     data.startDate=$('#obStartDate').value||todayStr;
     data.baselineDistance=parseFloat($('#obDistance').value)||1.17;
-    data.baselineTime=parseInt($('#obTime').value)||17;
+    data.baselineTime=parseMmSs($('#obTime').value)||17;
+    data.baselineSpm=parseInt($('#obSpm').value)||null;
     data.reminderTime=$('#obReminder').value||'06:30';
     data.reminderEnabled=true;
     saveData(data);
@@ -749,7 +802,7 @@ function renderDashboard(){
   // Stats
   $('#statMiles').textContent=stats.totalDist.toFixed(1);
   $('#statPace').textContent=formatPace(stats.avgPace);
-  $('#statMins').textContent=Math.round(stats.totalTime);
+  $('#statMins').textContent=formatMmSs(stats.totalTime);
 
   renderWater();
   renderLogBtn();
@@ -860,7 +913,8 @@ function openModal(dateStr){
   if(existing){
     setModalType(existing.type);
     $('#logDistance').value=existing.distance||'';
-    $('#logTime').value=existing.time||'';
+    $('#logTime').value=existing.time?formatMmSs(existing.time):'';
+    $('#logSpm').value=existing.spm||'';
     setModalFeel(existing.feel||'');
     $('#logNotes').value=existing.notes||'';
     $('#deleteWrap').style.display='';
@@ -868,6 +922,7 @@ function openModal(dateStr){
     setModalType('run');
     $('#logDistance').value='';
     $('#logTime').value='';
+    $('#logSpm').value='';
     setModalFeel('');
     $('#logNotes').value='';
     $('#deleteWrap').style.display='none';
@@ -903,6 +958,21 @@ $('#feelGroup').addEventListener('click',e=>{
   const b=e.target.closest('.feel-btn');
   if(b) setModalFeel(b.dataset.feel);
 });
+// Auto-format mm:ss inputs
+function setupMmSsInput(el){
+  el.addEventListener('input',function(){
+    let v=this.value.replace(/[^0-9:]/g,'');
+    // Auto-insert colon after 2 digits if user hasn't typed one
+    if(!v.includes(':')&&v.length>2) v=v.slice(0,2)+':'+v.slice(2,4);
+    if(v.includes(':')){
+      const parts=v.split(':');
+      v=parts[0].slice(0,2)+':'+parts[1].slice(0,2);
+    }
+    this.value=v;
+  });
+}
+setupMmSsInput($('#logTime'));
+
 $('#modalOverlay').onclick=closeModal;
 $('#modalCancel').onclick=closeModal;
 
@@ -910,7 +980,8 @@ $('#modalSave').onclick=()=>{
   const entry={type:modalType,loggedAt:new Date().toISOString()};
   if(modalType!=='rest'){
     entry.distance=parseFloat($('#logDistance').value)||0;
-    entry.time=parseFloat($('#logTime').value)||0;
+    entry.time=parseMmSs($('#logTime').value)||0;
+    entry.spm=parseInt($('#logSpm').value)||null;
     entry.feel=modalFeel;
   }
   entry.notes=$('#logNotes').value.trim();
@@ -996,7 +1067,9 @@ function getRunLogs(){
 
 function renderChart(){
   const canvas=$('#progressChart');
-  const entries=getRunLogs();
+  let entries=getRunLogs();
+  // For SPM tab, filter to only entries that have SPM logged
+  if(chartTab==='spm') entries=entries.filter(e=>e.spm);
   if(entries.length<2){
     canvas.style.display='none';
     $('#chartEmpty').style.display='';
@@ -1016,6 +1089,7 @@ function renderChart(){
   let values;
   if(chartTab==='distance') values=entries.map(e=>e.distance);
   else if(chartTab==='pace') values=entries.map(e=>e.time/e.distance);
+  else if(chartTab==='spm') values=entries.map(e=>Number(e.spm));
   else values=entries.map(e=>e.time);
 
   const padL=40,padR=16,padT=16,padB=32;
@@ -1035,7 +1109,8 @@ function renderChart(){
     let label;
     if(chartTab==='pace') label=formatPace(val);
     else if(chartTab==='distance') label=val.toFixed(1);
-    else label=Math.round(val)+'';
+    else if(chartTab==='spm') label=Math.round(val)+'';
+    else label=formatMmSs(val);
     ctx.fillText(label,padL-6,y+3);
   }
 
@@ -1103,8 +1178,9 @@ function renderHistory(){
       </div>
       ${e.type!=='rest'?`<div class="history-stats">
         <span>${(e.distance||0).toFixed(2)} mi</span>
-        <span>${e.time||0} min</span>
+        <span>${formatMmSs(e.time||0)}</span>
         <span>${pace}/mi</span>
+        ${e.spm?`<span>${e.spm} spm</span>`:''}
       </div>`:''}
       ${e.notes?`<div class="history-notes">${escapeHtml(e.notes)}</div>`:''}
     </div>`;
