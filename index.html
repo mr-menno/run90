@@ -169,6 +169,29 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   transition:opacity .25s ease,max-height .25s ease,margin .25s ease}
 .ring-section.compact .ring-sub{opacity:0;max-height:0;margin-top:0}
 
+/* Compact header info (logo + streak + water) */
+.compact-info{
+  display:none;align-items:center;gap:12px;
+  opacity:0;transition:opacity .25s ease;
+}
+.ring-section.compact .compact-info{display:flex;opacity:1}
+.compact-logo{
+  font-family:var(--font-display);font-size:20px;letter-spacing:2px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1;
+}
+.compact-stat{
+  display:flex;align-items:center;gap:4px;
+  font-family:var(--font-mono);font-size:13px;font-weight:600;
+}
+.compact-stat svg{width:14px;height:14px;flex-shrink:0}
+.compact-streak svg{fill:#FF6B35}
+.compact-water svg{fill:var(--info)}
+/* Fade out the normal header when compact ring is active */
+.dash-header{transition:opacity .25s ease}
+.dash-header.faded{opacity:0;pointer-events:none}
+
 /* Stat Cards */
 .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:8px 0}
 .stat-card{
@@ -415,6 +438,17 @@ canvas#progressChart{width:100%;height:200px;display:block}
 
       <!-- Progress Ring -->
       <div class="ring-section">
+        <div class="compact-info">
+          <div class="compact-logo">RUN90</div>
+          <div class="compact-stat compact-streak">
+            <svg viewBox="0 0 24 24"><path d="M11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 1.6-1.21 1.6-1.21s1.32 1.3 1.32 3.12c0 .17-.01.34-.03.51C15.25 16.5 16 14.65 16 12.61c0-3.07-2.14-5.74-5.04-7.61 1.1 2.73-.73 4.61-2.18 6.44C7.12 13.55 6 15.31 6 17.21A5.29 5.29 0 0 0 11.71 22c2.26 0 4.17-1.29 4.98-3.12-.84.72-1.93 1.12-3.12 1.12h.14Z"/></svg>
+            <span id="compactStreak">0</span>
+          </div>
+          <div class="compact-stat compact-water">
+            <svg viewBox="0 0 24 24"><path d="M12 2c-5.33 4.55-8 8.48-8 11.8 0 4.98 3.8 8.2 8 8.2s8-3.22 8-8.2c0-3.32-2.67-7.25-8-11.8z"/></svg>
+            <span id="compactWater">—</span>
+          </div>
+        </div>
         <div class="ring-wrap">
           <svg width="200" height="200" viewBox="0 0 200 200">
             <circle cx="100" cy="100" r="88" fill="none" stroke="#1a1a1a" stroke-width="10"/>
@@ -722,8 +756,11 @@ $('#bottomNav').addEventListener('click',e=>{
 (function(){
   const sh=$('#screenHome');
   const ring=sh.querySelector('.ring-section');
+  const header=sh.querySelector('.dash-header');
   sh.addEventListener('scroll',function(){
-    ring.classList.toggle('compact',this.scrollTop>60);
+    const isCompact=this.scrollTop>60;
+    ring.classList.toggle('compact',isCompact);
+    header.classList.toggle('faded',isCompact);
   },{passive:true});
 })();
 
@@ -737,6 +774,7 @@ function renderDashboard(){
 
   $('#phaseLabel').textContent=`Phase ${phases.indexOf(phase)+1}: ${phase.name}`;
   $('#streakCount').textContent=streak;
+  $('#compactStreak').textContent=streak;
   $('#ringDay').textContent=`Day ${dayNum}`;
   $('#ringSub').textContent=`${completedDays} completed \u00B7 ${90-completedDays} to go`;
 
@@ -768,6 +806,8 @@ function renderWater(){
   }
   html+=`<span class="water-count">${filled} / ${goal}</span>`;
   $('#waterRow').innerHTML=html;
+  const remaining=goal-filled;
+  $('#compactWater').textContent=remaining>0?`${remaining} left`:'done';
   $$('.water-glass').forEach(g=>{
     g.addEventListener('click',()=>{
       const idx=parseInt(g.dataset.idx);
